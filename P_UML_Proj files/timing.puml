@@ -1,0 +1,220 @@
+    ' @startuml
+    ' !theme plain
+    ' title Timing Diagram - Order Creation Process
+
+    ' participant User
+    ' participant "Frontend\n(UI)" as UI
+    ' participant "FlaskApp\n(Server)" as Server
+    ' participant "OrderDAO" as DAO
+    ' participant "MySQL\nDatabase" as DB
+
+    ' == Page Load ==
+    ' User -> UI: Navigate to Order Page
+    ' activate UI
+    ' UI -> Server: GET /getProducts
+    ' activate Server
+    ' Server -> DAO: get_all_products()
+    ' activate DAO
+    ' DAO -> DB: SELECT products\nJOIN uom
+    ' activate DB
+    ' DB --> DAO: Products data
+    ' deactivate DB
+    ' DAO --> Server: Products list
+    ' deactivate DAO
+    ' Server --> UI: JSON response
+    ' deactivate Server
+    ' UI -> Server: GET /getCustomers
+    ' activate Server
+    ' Server -> DAO: get_all_customers()
+    ' activate DAO
+    ' DAO -> DB: SELECT customers
+    ' activate DB
+    ' DB --> DAO: Customers data
+    ' deactivate DB
+    ' DAO --> Server: Customers list
+    ' deactivate DAO
+    ' Server --> UI: JSON response
+    ' deactivate Server
+    ' UI --> User: Display Order Form
+    ' deactivate UI
+
+    ' == User Interaction ==
+    ' User -> UI: Select Customer
+    ' activate UI
+    ' User -> UI: Add Product 1\n(quantity: 5)
+    ' UI -> UI: Calculate item total
+    ' User -> UI: Add Product 2\n(quantity: 3)
+    ' UI -> UI: Calculate item total
+    ' UI -> UI: Calculate grand total
+    ' UI --> User: Show totals
+    ' deactivate UI
+
+    ' == Order Submission ==
+    ' User -> UI: Click Submit Order
+    ' activate UI
+    ' UI -> Server: POST /insertOrder\n{order_data}
+    ' activate Server
+    ' Server -> DAO: insert_order(order)
+    ' activate DAO
+
+    ' == Database Transaction ==
+    ' DAO -> DB: BEGIN TRANSACTION
+    ' activate DB
+    ' DAO -> DB: INSERT INTO orders\n(customer_name, total, datetime)
+    ' DB --> DAO: order_id = 101
+    ' DAO -> DB: INSERT INTO order_details\n(order_id=101, product_id=1, qty=5)
+    ' DB --> DAO: Success
+    ' DAO -> DB: INSERT INTO order_details\n(order_id=101, product_id=2, qty=3)
+    ' DB --> DAO: Success
+    ' DAO -> DB: COMMIT TRANSACTION
+    ' deactivate DB
+
+    ' DAO -> DB: SELECT order + details\nWHERE order_id = 101
+    ' activate DB
+    ' DB --> DAO: Complete order data
+    ' deactivate DB
+    ' DAO --> Server: Order result
+    ' deactivate DAO
+    ' Server --> UI: 200 OK\n{order_id: 101, ...}
+    ' deactivate Server
+    ' UI --> User: Success Message\n"Order Created!"
+    ' UI -> UI: Redirect to Dashboard
+    ' deactivate UI
+
+    ' @enduml
+
+    @startuml
+!theme plain
+scale 1.5
+
+title Timing Diagram - Order Creation Process
+
+clock "Time (ms)" as Clk with period 100
+
+concise "User" as User
+concise "Frontend\n(UI)" as UI
+concise "Flask\nServer" as Server
+concise "OrderDAO" as DAO
+concise "MySQL" as DB
+
+' Initial states
+@0
+User is idle
+UI is idle
+Server is idle
+DAO is idle
+DB is idle
+
+' ==== PHASE 1: PAGE LOADING ====
+' User navigates to order page
+@+50
+User is interacting
+UI is processing
+
+' UI requests products
+@+10
+UI is waiting
+Server is processing
+DAO is processing
+DB is processing
+
+' Products query completes
+@+200
+DB is idle
+DAO is idle
+Server is idle
+UI is processing
+
+' UI processes products and requests customers
+@+50
+UI is waiting
+Server is processing
+DAO is processing
+DB is processing
+
+' Customers query completes
+@+100
+DB is idle
+DAO is idle
+Server is idle
+UI is processing
+
+' UI renders form
+@+100
+UI is idle
+User is viewing
+
+' ==== PHASE 2: USER INTERACTION ====
+' User selects customer
+@+150
+User is interacting
+UI is processing
+
+@+20
+UI is idle
+User is viewing
+
+' User adds product 1
+@+100
+User is interacting
+UI is processing
+
+@+20
+UI is idle
+User is viewing
+
+' User adds product 2
+@+100
+User is interacting
+UI is processing
+
+@+20
+UI is idle
+User is viewing
+
+' ==== PHASE 3: ORDER SUBMISSION ====
+' User submits order
+@+200
+User is interacting
+UI is processing
+
+@+30
+UI is waiting
+Server is processing
+DAO is processing
+
+' Database transaction begins
+@+20
+DAO is processing
+DB is processing
+
+' Insert order
+@+80
+DB is idle
+DAO is processing
+
+' Insert order details
+@+50
+DB is processing
+
+@+50
+DB is idle
+DAO is idle
+Server is processing
+
+' Server builds response
+@+30
+Server is idle
+UI is processing
+
+' UI shows success
+@+50
+UI is idle
+User is viewing
+
+' User returns to dashboard
+@+100
+User is idle
+UI is idle
+
+@enduml

@@ -1,0 +1,305 @@
+@startuml 4+1 View Architecture - Grocery Store Management System
+!theme plain
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam rectangle {
+    BackgroundColor #E8F4F8
+    BorderColor #2E7D9A
+}
+skinparam database {
+    BackgroundColor #FFF4E6
+    BorderColor #D4A574
+}
+
+title 4+1 View Architecture Diagram\nGrocery Store Management System
+
+' ============================================
+' 1. LOGICAL VIEW - Functional Decomposition
+' Shows the functional requirements and
+' how the system is decomposed into components
+' ============================================
+package "1. LOGICAL VIEW - Functional Components" #LightBlue {
+    
+    package "Presentation Layer" {
+        component [User Interface] as UI
+        component [Authentication UI] as AuthUI
+        component [Product Management UI] as ProductUI
+        component [Order Management UI] as OrderUI
+        component [Customer Management UI] as CustomerUI
+        component [Finance Management UI] as FinanceUI
+    }
+    
+    package "Application Layer" {
+        component [Flask Web Server] as FlaskServer
+        component [Authentication Service] as AuthService
+        component [Product Service] as ProductService
+        component [Order Service] as OrderService
+        component [Customer Service] as CustomerService
+        component [Finance Service] as FinanceService
+    }
+    
+    package "Data Access Layer" {
+        component [Product DAO] as ProductDAO
+        component [Order DAO] as OrderDAO
+        component [Customer DAO] as CustomerDAO
+        component [Finance DAO] as FinanceDAO
+        component [User DAO] as UserDAO
+        component [UOM DAO] as UOMDAO
+    }
+    
+    package "Data Layer" {
+        database "MySQL Database" as MySQLDB {
+            entity "products" as ProductsTable
+            entity "orders" as OrdersTable
+            entity "order_details" as OrderDetailsTable
+            entity "customer" as CustomerTable
+            entity "finances" as FinancesTable
+            entity "users" as UsersTable
+            entity "uom" as UOMTable
+        }
+    }
+    
+    UI --> AuthUI
+    UI --> ProductUI
+    UI --> OrderUI
+    UI --> CustomerUI
+    UI --> FinanceUI
+    
+    AuthUI --> AuthService
+    ProductUI --> ProductService
+    OrderUI --> OrderService
+    CustomerUI --> CustomerService
+    FinanceUI --> FinanceService
+    
+    AuthService --> UserDAO
+    ProductService --> ProductDAO
+    ProductService --> UOMDAO
+    OrderService --> OrderDAO
+    CustomerService --> CustomerDAO
+    FinanceService --> FinanceDAO
+    
+    ProductDAO --> ProductsTable
+    ProductDAO --> UOMTable
+    OrderDAO --> OrdersTable
+    OrderDAO --> OrderDetailsTable
+    OrderDAO --> ProductsTable
+    CustomerDAO --> CustomerTable
+    FinanceDAO --> FinancesTable
+    FinanceDAO --> CustomerTable
+    UserDAO --> UsersTable
+}
+
+' ============================================
+' 2. PROCESS VIEW - Runtime Behavior
+' Shows the dynamic aspects of the system,
+' processes, threads, and concurrency
+' ============================================
+package "2. PROCESS VIEW - Runtime Architecture" #LightGreen {
+    
+    node "Client Browser" as Browser {
+        component "JavaScript Engine" as JSEngine
+        component "DOM Renderer" as DOMRenderer
+        component "HTTP Client" as HTTPClient
+    }
+    
+    node "Flask Application Server" as FlaskApp {
+        component "Request Handler" as RequestHandler
+        component "Session Manager" as SessionMgr
+        component "Authentication Middleware" as AuthMiddleware
+        component "Route Dispatcher" as RouteDispatcher
+        component "Connection Pool" as ConnPool
+    }
+    
+    node "MySQL Database Server" as MySQLServer {
+        component "Query Processor" as QueryProcessor
+        component "Transaction Manager" as TransMgr
+        component "Storage Engine" as StorageEngine
+    }
+    
+    Browser --> FlaskApp : HTTP/HTTPS Requests
+    JSEngine --> HTTPClient
+    HTTPClient --> FlaskApp
+    FlaskApp --> Browser : JSON Responses
+    
+    RequestHandler --> SessionMgr
+    RequestHandler --> AuthMiddleware
+    RequestHandler --> RouteDispatcher
+    RouteDispatcher --> ConnPool
+    ConnPool --> MySQLServer : SQL Queries
+    MySQLServer --> ConnPool : Query Results
+    
+    QueryProcessor --> TransMgr
+    TransMgr --> StorageEngine
+}
+
+' ============================================
+' 3. DEVELOPMENT VIEW - Module Structure
+' Shows the static organization of software
+' in its development environment
+' ============================================
+package "3. DEVELOPMENT VIEW - Code Organization" #LightYellow {
+    
+    package "Frontend (ui/)" {
+        folder "HTML Pages" {
+            file "login.html"
+            file "index.html"
+            file "manage-product.html"
+            file "order.html"
+            file "manage-customer.html"
+            file "manage-finance.html"
+        }
+        
+        folder "JavaScript (js/custom/)" {
+            file "auth.js"
+            file "dashboard.js"
+            file "manage-product.js"
+            file "order.js"
+            file "manage-customer.js"
+            file "manage-finance.js"
+            file "common.js"
+        }
+        
+        folder "CSS Styles" {
+            file "bootstrap.min.css"
+            file "custom.css"
+            file "style.css"
+        }
+    }
+    
+    package "Backend (backend/)" {
+        file "server.py" as ServerPy
+        file "sql_connection.py" as SQLConn
+        
+        folder "Data Access Objects" {
+            file "products_dao.py" as ProductsDAOFile
+            file "orders_dao.py" as OrdersDAOFile
+            file "customer_dao.py" as CustomerDAOFile
+            file "finances_dao.py" as FinancesDAOFile
+            file "users_dao.py" as UsersDAOFile
+            file "uom_dao.py" as UOMDAOFile
+        }
+    }
+    
+    package "Database" {
+        file "database_schema.sql" as SchemaSQL
+    }
+    
+    ServerPy --> SQLConn
+    ServerPy --> ProductsDAOFile
+    ServerPy --> OrdersDAOFile
+    ServerPy --> CustomerDAOFile
+    ServerPy --> FinancesDAOFile
+    ServerPy --> UsersDAOFile
+    ServerPy --> UOMDAOFile
+    
+    ProductsDAOFile --> SQLConn
+    OrdersDAOFile --> SQLConn
+    CustomerDAOFile --> SQLConn
+    FinancesDAOFile --> SQLConn
+    UsersDAOFile --> SQLConn
+    UOMDAOFile --> SQLConn
+}
+
+' ============================================
+' 4. PHYSICAL VIEW - Deployment Architecture
+' Shows the mapping of software to hardware
+' and the physical deployment topology
+' ============================================
+package "4. PHYSICAL VIEW - Deployment Topology" #LightCoral {
+    
+    node "Client Machine" as Client {
+        component "Web Browser\n(Chrome/Firefox/Edge)" as WebBrowser
+    }
+    
+    node "Application Server\n(Windows/Linux)" as AppServer {
+        component "Flask Application\n(Python 3.x)\nPort: 5000" as FlaskAppPhysical
+        component "Python Runtime" as PythonRT
+    }
+    
+    node "Database Server\n(Windows/Linux)" as DBServer {
+        database "MySQL 8.0\nPort: 3306" as MySQLDBPhysical
+        component "MySQL Server Process" as MySQLProcess
+    }
+    
+    Client --> AppServer : HTTP (Port 5000)
+    AppServer --> DBServer : MySQL Protocol (Port 3306)
+    
+    note right of Client
+        *Client Layer*
+        - Static files served by Flask
+        - JavaScript executes in browser
+        - AJAX calls to Flask API
+    end note
+    
+    note right of AppServer
+        *Application Layer*
+        - Flask development server
+        - Handles HTTP requests
+        - Manages sessions
+        - Database connection pooling
+    end note
+    
+    note right of DBServer
+        *Data Layer*
+        - MySQL database instance
+        - Stores all business data
+        - Handles transactions
+        - Enforces referential integrity
+    end note
+}
+
+' ============================================
+' 5. SCENARIOS (+1) - Use Cases
+' Use cases that tie the other views together
+' ============================================
+package "5. SCENARIOS - Use Case Flows" #Lavender {
+    
+    note top
+        *Scenario 1: User Login Flow*
+        Demonstrates authentication process
+        across all architectural layers
+    end note
+    
+    actor User
+    component "Login UI\n(login.html)" as LoginUI
+    component "Auth Service\n(/login endpoint)" as AuthService2
+    component "User DAO\n(users_dao.py)" as UserDAO2
+    database "MySQL\n(users table)" as UsersDB
+    
+    User --> LoginUI : 1. Enter credentials
+    LoginUI --> AuthService2 : 2. POST /login\n{username, password}
+    AuthService2 --> UserDAO2 : 3. verify_user()
+    UserDAO2 --> UsersDB : 4. SELECT query
+    UsersDB --> UserDAO2 : 5. User data
+    UserDAO2 --> AuthService2 : 6. User object
+    AuthService2 --> AuthService2 : 7. Create session
+    AuthService2 --> LoginUI : 8. Success response
+    LoginUI --> User : 9. Redirect to dashboard
+    
+    note bottom
+        *Scenario 2: Create Order Flow*
+        Demonstrates order processing with
+        transaction management
+    end note
+    
+    actor Staff
+    component "Order UI\n(order.html)" as OrderUI2
+    component "Order Service\n(/insertOrder)" as OrderService2
+    component "Order DAO\n(orders_dao.py)" as OrderDAO2
+    database "MySQL\n(orders, order_details)" as OrdersDB
+    
+    Staff --> OrderUI2 : 1. Select products
+    OrderUI2 --> OrderUI2 : 2. Calculate totals
+    OrderUI2 --> OrderService2 : 3. POST /insertOrder
+    OrderService2 --> OrderDAO2 : 4. insert_order()
+    OrderDAO2 --> OrdersDB : 5. BEGIN TRANSACTION
+    OrderDAO2 --> OrdersDB : 6. INSERT orders
+    OrderDAO2 --> OrdersDB : 7. INSERT order_details
+    OrderDAO2 --> OrdersDB : 8. COMMIT
+    OrdersDB --> OrderDAO2 : 9. Order ID
+    OrderDAO2 --> OrderService2 : 10. Result
+    OrderService2 --> OrderUI2 : 11. Success
+    OrderUI2 --> Staff : 12. Confirmation
+}
+
+@enduml

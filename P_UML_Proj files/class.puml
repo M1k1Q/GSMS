@@ -1,0 +1,205 @@
+@startuml
+!theme plain
+title Class Diagram - Grocery Store Management System
+
+' Database Entities
+class UOM {
+    +uom_id: INT
+    +uom_name: VARCHAR(45)
+}
+
+class Customer {
+    +Customer_id: INT
+    +Customer_name: VARCHAR(100)
+    +Email: VARCHAR(100)
+    +PhoneNum: VARCHAR(20)
+}
+
+class Product {
+    +products_id: INT
+    +name: VARCHAR(150)
+    +uom_id: INT
+    +price_per_unit: DECIMAL(10,2)
+    +is_active: TINYINT(1)
+}
+
+class Order {
+    +order_id: INT
+    +customer_name: VARCHAR(100)
+    +total: DECIMAL(12,2)
+    +datetime: DATETIME
+}
+
+class OrderDetail {
+    +order_id: INT
+    +products_id: INT
+    +quantity: DECIMAL(10,2)
+    +total_price: DECIMAL(12,2)
+}
+
+class Finance {
+    +payment_id: INT
+    +total_price: DECIMAL(12,2)
+    +payment_type: VARCHAR(45)
+    +date: DATE
+    +Customer_id: INT
+}
+
+class User {
+    +user_id: INT
+    +username: VARCHAR(100)
+    +password_hash: VARCHAR(255)
+}
+
+' DAO Classes
+class SQLConnection {
+    +get_sql_connection(): Connection
+}
+
+class UOMDAO {
+    +get_uoms(connection): List[Dict]
+}
+
+class ProductDAO {
+    +get_all_products(connection): List[Dict]
+    +insert_new_product(connection, product): INT
+    +delete_product(connection, product_id): INT
+}
+
+class CustomerDAO {
+    +get_all_customers(connection): List[Dict]
+    +insert_new_customer(connection, customer): INT
+    +update_customer(connection, customer): INT
+    +delete_customer(connection, customer_id): INT
+}
+
+class OrderDAO {
+    +insert_order(connection, order): Dict
+    +get_all_orders(connection): List[Dict]
+    +get_order_by_id(connection, order_id): Dict
+    +get_order_details(connection, order_id): List[Dict]
+    +update_order(connection, order): Dict
+    +delete_order(connection, order_id): INT
+}
+
+class FinanceDAO {
+    +get_all_finances(connection): List[Dict]
+    +insert_new_finance(connection, finance): INT
+    +update_finance(connection, finance): INT
+    +delete_finance(connection, payment_id): INT
+}
+
+class UserDAO {
+    +create_user(connection, username, password): INT
+    +find_user_by_username(connection, username): Dict
+    +verify_user(connection, username, password): Boolean
+    +get_user_by_id(connection, user_id): Dict
+}
+
+' Flask Application
+class FlaskApp {
+    -app: Flask
+    -secret_key: str
+    +db_connection(): ContextManager
+    +require_auth(f): Decorator
+    +index(): Response
+    +serve_static(filename): Response
+    +get_uom(): Response
+    +get_products(): Response
+    +insert_product(): Response
+    +delete_product(): Response
+    +get_customers(): Response
+    +insert_customer(): Response
+    +update_customer(): Response
+    +delete_customer(): Response
+    +get_all_orders(): Response
+    +insert_order(): Response
+    +update_order(): Response
+    +delete_order(): Response
+    +get_order_details(order_id): Response
+    +get_finances(): Response
+    +insert_finance(): Response
+    +update_finance(): Response
+    +delete_finance(): Response
+    +register(): Response
+    +login(): Response
+    +logout(): Response
+    +current_user(): Response
+}
+
+' Frontend Components
+class FrontendController {
+    +productListApiUrl: str
+    +customerListApiUrl: str
+    +orderListApiUrl: str
+    +financeListApiUrl: str
+    +callApi(method, url, data, options): void
+    +calculateValue(): void
+}
+
+class AuthController {
+    +login(): void
+    +register(): void
+    +logout(): void
+    +refreshUser(): void
+}
+
+class ProductController {
+    +loadProducts(): void
+    +saveProduct(): void
+    +deleteProduct(): void
+}
+
+class CustomerController {
+    +loadCustomers(): void
+    +saveCustomer(): void
+    +updateCustomer(): void
+    +deleteCustomer(): void
+}
+
+class OrderController {
+    +loadOrders(): void
+    +createOrder(): void
+    +updateOrder(): void
+    +deleteOrder(): void
+    +viewOrderDetails(): void
+    +buildOrderPayload(): Dict
+}
+
+class FinanceController {
+    +loadFinances(): void
+    +saveFinance(): void
+    +updateFinance(): void
+    +deleteFinance(): void
+}
+
+' Relationships
+Product "1" --> "1" UOM : uses
+Order "1" --> "*" OrderDetail : contains
+OrderDetail "*" --> "1" Product : references
+Finance "*" --> "0..1" Customer : optional link
+
+FlaskApp --> SQLConnection : uses
+FlaskApp --> UOMDAO : uses
+FlaskApp --> ProductDAO : uses
+FlaskApp --> CustomerDAO : uses
+FlaskApp --> OrderDAO : uses
+FlaskApp --> FinanceDAO : uses
+FlaskApp --> UserDAO : uses
+
+ProductDAO --> Product : manages
+CustomerDAO --> Customer : manages
+OrderDAO --> Order : manages
+OrderDAO --> OrderDetail : manages
+FinanceDAO --> Finance : manages
+UserDAO --> User : manages
+UOMDAO --> UOM : manages
+
+FrontendController --> FlaskApp : HTTP requests
+AuthController --> FlaskApp : HTTP requests
+ProductController --> FlaskApp : HTTP requests
+CustomerController --> FlaskApp : HTTP requests
+OrderController --> FlaskApp : HTTP requests
+FinanceController --> FlaskApp : HTTP requests
+
+@enduml

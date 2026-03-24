@@ -1,0 +1,154 @@
+@startuml
+!theme plain
+title Overall System Activity Flow - Grocery Store Management System
+
+start
+:User accesses application;
+:Load login/registration page;
+
+if (New user?) then (yes)
+    :User registers;
+    :Enter username and password;
+    :POST /register;
+    :Create user account;
+    :Hash password;
+    :Store in database;
+endif
+
+:User logs in;
+:Enter credentials;
+:POST /login;
+:Verify credentials;
+if (Valid?) then (no)
+    :Show error message;
+    stop
+endif
+
+:Create session;
+:Load dashboard;
+
+repeat
+    :User selects action;
+    
+    if (Manage Products?) then (yes)
+        :Load products page;
+        :GET /getProducts;
+        :Display products table;
+        
+        if (Add product?) then (yes)
+            :GET /getUOM;
+            :Fill product form;
+            :POST /insertProduct;
+            :Save to database;
+        endif
+        
+        if (Delete product?) then (yes)
+            :POST /deleteProduct;
+            :Update is_active = 0;
+        endif
+    endif
+    
+    if (Manage Customers?) then (yes)
+        :Load customers page;
+        :GET /getCustomers;
+        :Display customers table;
+        
+        if (Add customer?) then (yes)
+            :Fill customer form;
+            :POST /insertCustomer;
+            :Save to database;
+        endif
+        
+        if (Edit customer?) then (yes)
+            :Load customer data;
+            :Modify form;
+            :POST /updateCustomer;
+            :Update database;
+        endif
+        
+        if (Delete customer?) then (yes)
+            :POST /deleteCustomer;
+            :Remove from database;
+        endif
+    endif
+    
+    if (Create Order?) then (yes)
+        :Load order page;
+        :GET /getProducts;
+        :GET /getCustomers;
+        :Select customer;
+        
+        repeat
+            :Select product;
+            :Enter quantity;
+            :Calculate item total;
+        repeat while (More products?) is (yes)
+        ->no;
+        
+        :Calculate grand total;
+        :POST /insertOrder;
+        :Save order;
+        :Save order details;
+        :Display success;
+    endif
+    
+    if (View Orders?) then (yes)
+        :Load orders page;
+        :GET /getAllOrders;
+        :Display orders table;
+        
+        if (View details?) then (yes)
+            :GET /getOrderDetails/<id>;
+            :Show order details modal;
+        endif
+        
+        if (Edit order?) then (yes)
+            :Load order data;
+            :Modify order;
+            :POST /updateOrder;
+            :Update order and details;
+        endif
+        
+        if (Delete order?) then (yes)
+            :POST /deleteOrder;
+            :Remove order and details;
+        endif
+    endif
+    
+    if (Manage Finances?) then (yes)
+        :Load finances page;
+        :GET /getFinances;
+        :GET /getCustomers;
+        :Display finances table;
+        
+        if (Add finance?) then (yes)
+            :Fill finance form;
+            :POST /insertFinance;
+            :Save to database;
+        endif
+        
+        if (Edit finance?) then (yes)
+            :Load finance data;
+            :Modify form;
+            :POST /updateFinance;
+            :Update database;
+        endif
+        
+        if (Delete finance?) then (yes)
+            :POST /deleteFinance;
+            :Remove from database;
+        endif
+    endif
+    
+    if (Logout?) then (yes)
+        :POST /logout;
+        :Clear session;
+        stop
+    endif
+    
+repeat while (Continue using system?) is (yes)
+->no;
+
+stop
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+!theme plain
+title Deployment Diagram - Grocery Store Management System
+
+node "Client Machine" as Client {
+    artifact "Web Browser" as Browser
+    artifact "Frontend Assets" as Frontend
+    
+    note right of Frontend
+        HTML Pages
+        CSS Files
+        JavaScript Files
+        jQuery Library
+        Bootstrap Framework
+    end note
+}
+
+node "Web Server" as WebServer {
+    component "Flask Application" as FlaskApp
+    database "Session Storage" as Session
+    component "Data Access Layer" as DAL
+    
+    note right of FlaskApp
+        Python 3.x
+        Flask Framework
+        MySQL Connector
+        server.py with routes
+    end note
+    
+    note right of DAL
+        DAO modules:
+        • products_dao.py
+        • customer_dao.py
+        • orders_dao.py
+        • finances_dao.py
+        • users_dao.py
+        • uom_dao.py
+        • sql_connection.py
+    end note
+}
+
+node "Database Server" as DBServer {
+    database "MySQL Database" as MySQL
+    
+    note right of MySQL
+        Port: 3306
+        Database: grocery_store
+        Tables:
+        • users
+        • products
+        • customer
+        • orders
+        • order_details
+        • finances
+        • uom
+    end note
+}
+
+' Connections
+Browser --> WebServer : HTTP/HTTPS\n(Port 5000)
+Browser --> Frontend : Loads Static Files
+FlaskApp --> Session : Stores Sessions
+FlaskApp --> DAL : Uses
+DAL --> MySQL : SQL Queries\n(Port 3306)
+
+' Network connections
+Client ..> WebServer : Network\n(LAN/Internet)
+WebServer ..> DBServer : Network\n(LAN)
+
+note right of Browser
+  User interacts with web interface
+  Makes AJAX requests to Flask server
+end note
+
+@enduml

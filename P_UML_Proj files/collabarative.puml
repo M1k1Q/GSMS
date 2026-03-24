@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+title Collaboration Diagram - Order Creation Process
+
+actor User
+component "Frontend (UI)" as UI
+component "FlaskApp (Server)" as Server
+component "OrderDAO" as OrderDAO
+component "ProductDAO" as ProductDAO  
+component "CustomerDAO" as CustomerDAO
+database "MySQL Database" as DB
+
+User -[#blue]> UI : "1. Navigate to Order Page"
+UI -[#blue]> Server : "2. GET /getProducts"
+Server -[#blue]> ProductDAO : "3. get_all_products()"
+ProductDAO -[#blue]> DB : "4. SELECT products"
+DB -[#blue]> ProductDAO : "5. Products list"
+ProductDAO -[#blue]> Server : "6. Return products"
+Server -[#blue]> UI : "7. JSON products"
+
+UI -[#green]> Server : "8. GET /getCustomers"
+Server -[#green]> CustomerDAO : "9. get_all_customers()"
+CustomerDAO -[#green]> DB : "10. SELECT customers"
+DB -[#green]> CustomerDAO : "11. Customers list"
+CustomerDAO -[#green]> Server : "12. Return customers"
+Server -[#green]> UI : "13. JSON customers"
+
+UI -[#orange]> User : "14. Display Order Form"
+
+User -[#purple]> UI : "15. Select Customer & Products"
+User -[#purple]> UI : "16. Enter Quantities"
+UI -[#purple]> UI : "17. Calculate Totals"
+
+User -[#red]> UI : "18. Submit Order"
+UI -[#red]> Server : "19. POST /insertOrder\\n{order_data}"
+Server -[#red]> OrderDAO : "20. insert_order(order)"
+OrderDAO -[#red]> DB : "21. INSERT INTO orders"
+DB -[#red]> OrderDAO : "22. order_id"
+OrderDAO -[#red]> OrderDAO : "23. For each detail"
+OrderDAO -[#red]> DB : "24. INSERT INTO order_details"
+DB -[#red]> OrderDAO : "25. Success"
+OrderDAO -[#red]> OrderDAO : "26. get_order_by_id()"
+OrderDAO -[#red]> DB : "27. SELECT order + details"
+DB -[#red]> OrderDAO : "28. Complete order"
+OrderDAO -[#red]> Server : "29. Order result"
+Server -[#red]> UI : "30. 200 OK {order_id}"
+UI -[#red]> User : "31. Success Message\\nRedirect to Dashboard"
+
+note left of User
+  <b>Order Creation Process</b>
+  User initiates order creation
+  through the web interface.
+end note
+
+note bottom of DB
+  <b>Database Operations</b>
+  Stores all persistent data
+  for the system.
+end note
+
+@enduml

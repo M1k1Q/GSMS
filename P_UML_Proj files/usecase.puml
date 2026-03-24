@@ -1,0 +1,85 @@
+@startuml
+!theme plain
+title Use Case Diagram - Grocery Store Management System
+
+left to right direction
+actor User
+
+rectangle "Grocery Store Management System" {
+    ' Authentication Use Cases
+    usecase UC1 as "Register Account"
+    usecase UC2 as "Login"
+    usecase UC3 as "Logout"
+    usecase UC4 as "View Dashboard"
+    
+    ' Product Management Use Cases
+    usecase UC5 as "View Products"
+    usecase UC6 as "Add Product"
+    usecase UC7 as "Delete Product"
+    
+    ' Customer Management Use Cases
+    usecase UC8 as "View Customers"
+    usecase UC9 as "Add Customer"
+    usecase UC10 as "Update Customer"
+    usecase UC11 as "Delete Customer"
+    
+    ' Order Management Use Cases
+    usecase UC12 as "View Orders"
+    usecase UC13 as "Create Order"
+    usecase UC14 as "View Order Details"
+    usecase UC15 as "Edit Order"
+    usecase UC16 as "Delete Order"
+    
+    ' Finance Management Use Cases
+    usecase UC17 as "View Finances"
+    usecase UC18 as "Add Finance Record"
+    usecase UC19 as "Update Finance Record"
+    usecase UC20 as "Delete Finance Record"
+}
+
+' User connections
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+User --> UC8
+User --> UC9
+User --> UC10
+User --> UC11
+User --> UC12
+User --> UC13
+User --> UC14
+User --> UC15
+User --> UC16
+User --> UC17
+User --> UC18
+User --> UC19
+User --> UC20
+
+' Relationships
+UC2 ..> UC4 : <<include>>
+UC13 ..> UC5 : <<include>>
+UC13 ..> UC8 : <<include>>
+UC15 ..> UC14 : <<include>>
+UC6 ..> UC5 : <<extend>>
+
+note right of UC1
+  User creates account
+  with username and password
+end note
+
+note right of UC13
+  User selects customer,
+  adds products with quantities,
+  and creates order
+end note
+
+note right of UC14
+  View detailed breakdown
+  of order items and prices
+end note
+
+@enduml

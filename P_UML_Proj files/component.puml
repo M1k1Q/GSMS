@@ -1,0 +1,94 @@
+@startuml
+!theme plain
+
+title Component Diagram - Grocery Store Management System
+
+package "Frontend Layer" {
+    component "HTML Pages" as HTML
+    component "CSS Styling" as CSS
+    component "JavaScript Controllers" as JS
+    component "jQuery Library" as JQuery
+    component "Bootstrap Library" as Bootstrap
+}
+
+package "Backend Layer" {
+    component "Flask Application" as FlaskApp
+    
+    rectangle "Data Access Layer" as DAL {
+        component "ProductDAO" as ProductDAO
+        component "CustomerDAO" as CustomerDAO
+        component "OrderDAO" as OrderDAO
+        component "FinanceDAO" as FinanceDAO
+        component "UserDAO" as UserDAO
+        component "UOMDAO" as UOMDAO
+    }
+    
+    component "Database Connection" as DBConn
+}
+
+package "Database Layer" {
+    database "MySQL Database" as MySQL
+}
+
+' Frontend relationships
+HTML --> CSS : uses
+HTML --> JS : uses
+JS --> JQuery : depends on
+JS --> Bootstrap : depends on
+
+' Frontend to Backend
+JS --> FlaskApp : HTTP Requests\n(REST API)
+
+' Backend relationships
+FlaskApp --> DAL : uses
+FlaskApp --> DBConn : uses
+DAL --> DBConn : uses
+ProductDAO --> DBConn
+CustomerDAO --> DBConn
+OrderDAO --> DBConn
+FinanceDAO --> DBConn
+UserDAO --> DBConn
+UOMDAO --> DBConn
+
+' Backend to Database
+DBConn --> MySQL : SQL Queries
+
+' API Endpoints - Using a note instead
+note bottom of FlaskApp
+  <b>API Endpoints:</b>
+  /login
+  /register
+  /logout
+  /getProducts
+  /insertProduct
+  /deleteProduct
+  /getCustomers
+  /insertCustomer
+  /updateCustomer
+  /deleteCustomer
+  /getAllOrders
+  /insertOrder
+  /updateOrder
+  /deleteOrder
+  /getOrderDetails
+  /getFinances
+  /insertFinance
+  /updateFinance
+  /deleteFinance
+  /getUOM
+end note
+
+note right of FlaskApp
+  Flask Web Framework
+  Handles HTTP requests/responses
+  Manages sessions
+  Provides REST API endpoints
+end note
+
+note right of DAL
+  Data Access Objects
+  Encapsulate database operations
+  Provide abstraction layer
+end note
+
+@enduml

@@ -1,0 +1,335 @@
+@startuml
+!theme plain
+title Overall System Flow - Grocery Store Management System
+
+actor User
+participant "Frontend\n(UI)" as UI
+participant "Flask Server\n(Backend)" as Server
+participant "User DAO" as UserDAO
+participant "Product DAO" as ProductDAO
+participant "Customer DAO" as CustomerDAO
+participant "Order DAO" as OrderDAO
+participant "Finance DAO" as FinanceDAO
+participant "UOM DAO" as UOMDAO
+database "MySQL\nDatabase" as DB
+
+== Authentication Flow ==
+User -> UI: Access Application
+UI -> Server: GET / (index.html)
+Server --> UI: Serve index.html
+
+User -> UI: Register New Account
+UI -> Server: POST /register\n{username, password}
+activate Server
+Server -> UserDAO: create_user(username, password)
+activate UserDAO
+UserDAO -> DB: INSERT INTO users
+activate DB
+DB --> UserDAO: user_id
+deactivate DB
+UserDAO --> Server: user_id
+deactivate UserDAO
+Server --> UI: 200 OK\n{user_id}
+deactivate Server
+UI --> User: Registration Success
+
+User -> UI: Login
+UI -> Server: POST /login\n{username, password}
+activate Server
+Server -> UserDAO: verify_user(username, password)
+activate UserDAO
+UserDAO -> DB: SELECT * FROM users\nWHERE username = ?
+activate DB
+DB --> UserDAO: User data
+deactivate DB
+UserDAO --> Server: is_valid (True/False)
+deactivate UserDAO
+alt Valid Credentials
+    Server -> Server: Create session\nsession['user'] = username
+    Server --> UI: 200 OK\n{message: "login successful"}
+else Invalid Credentials
+    Server --> UI: 401 Unauthorized\n{error: "invalid credentials"}
+end
+deactivate Server
+UI -> Server: GET /current_user
+Server --> UI: {user: username}
+UI --> User: Show Dashboard
+
+== Product Management Flow ==
+User -> UI: View Products Page
+UI -> Server: GET /getProducts
+activate Server
+Server -> ProductDAO: get_all_products(conn)
+activate ProductDAO
+ProductDAO -> DB: SELECT * FROM products\nJOIN uom
+activate DB
+DB --> ProductDAO: Product list
+deactivate DB
+ProductDAO --> Server: Products array
+deactivate ProductDAO
+Server --> UI: 200 OK\n(JSON products)
+deactivate Server
+UI --> User: Display Products Table
+
+User -> UI: Add New Product
+UI -> Server: GET /getUOM
+activate Server
+Server -> UOMDAO: get_uoms(conn)
+activate UOMDAO
+UOMDAO -> DB: SELECT * FROM uom
+activate DB
+DB --> UOMDAO: UOM list
+deactivate DB
+UOMDAO --> Server: UOM array
+deactivate UOMDAO
+Server --> UI: 200 OK\n(JSON uoms)
+deactivate Server
+UI --> User: Show Product Form\nwith UOM dropdown
+
+User -> UI: Submit Product Form
+UI -> Server: POST /insertProduct\n{data: {name, uom_id, price_per_unit}}
+activate Server
+Server -> ProductDAO: insert_new_product(conn, payload)
+activate ProductDAO
+ProductDAO -> DB: INSERT INTO products
+activate DB
+DB --> ProductDAO: products_id
+deactivate DB
+ProductDAO --> Server: products_id
+deactivate ProductDAO
+Server --> UI: 200 OK\n{products_id}
+deactivate Server
+UI --> User: Product Added\nReload Page
+
+User -> UI: Delete Product
+UI -> Server: POST /deleteProduct\n{products_id}
+activate Server
+Server -> ProductDAO: delete_product(conn, products_id)
+activate ProductDAO
+ProductDAO -> DB: DELETE FROM products\nWHERE products_id = ?
+activate DB
+DB --> ProductDAO: Success
+deactivate DB
+ProductDAO --> Server: products_id
+deactivate ProductDAO
+Server --> UI: 200 OK\n{products_id}
+deactivate Server
+UI --> User: Product Deleted\nReload Page
+
+== Customer Management Flow ==
+User -> UI: View Customers Page
+UI -> Server: GET /getCustomers
+activate Server
+Server -> CustomerDAO: get_all_customers(conn)
+activate CustomerDAO
+CustomerDAO -> DB: SELECT * FROM customers
+activate DB
+DB --> CustomerDAO: Customer list
+deactivate DB
+CustomerDAO --> Server: Customers array
+deactivate CustomerDAO
+Server --> UI: 200 OK\n(JSON customers)
+deactivate Server
+UI --> User: Display Customers Table
+
+User -> UI: Add/Edit Customer
+UI -> Server: POST /insertCustomer\nor POST /updateCustomer\n{data: {Customer_id, Customer_name, Email, PhoneNum}}
+activate Server
+alt New Customer
+    Server -> CustomerDAO: insert_new_customer(conn, payload)
+    activate CustomerDAO
+    CustomerDAO -> DB: INSERT INTO customers
+    activate DB
+    DB --> CustomerDAO: Customer_id
+    deactivate DB
+else Update Customer
+    Server -> CustomerDAO: update_customer(conn, payload)
+    activate CustomerDAO
+    CustomerDAO -> DB: UPDATE customers\nSET ... WHERE Customer_id = ?
+    activate DB
+    DB --> CustomerDAO: Success
+    deactivate DB
+end
+CustomerDAO --> Server: Customer_id
+deactivate CustomerDAO
+Server --> UI: 200 OK\n{Customer_id}
+deactivate Server
+UI --> User: Customer Saved\nReload Page
+
+User -> UI: Delete Customer
+UI -> Server: POST /deleteCustomer\n{Customer_id}
+activate Server
+Server -> CustomerDAO: delete_customer(conn, Customer_id)
+activate CustomerDAO
+CustomerDAO -> DB: DELETE FROM customers\nWHERE Customer_id = ?
+activate DB
+DB --> CustomerDAO: Success
+deactivate DB
+CustomerDAO --> Server: Customer_id
+deactivate CustomerDAO
+Server --> UI: 200 OK\n{Customer_id}
+deactivate Server
+UI --> User: Customer Deleted\nReload Page
+
+== Order Management Flow ==
+User -> UI: View Orders Page
+UI -> Server: GET /getAllOrders
+activate Server
+Server -> OrderDAO: get_all_orders(conn)
+activate OrderDAO
+OrderDAO -> DB: SELECT * FROM orders\nJOIN order_details\nJOIN customers
+activate DB
+DB --> OrderDAO: Orders with details
+deactivate DB
+OrderDAO --> Server: Orders array
+deactivate OrderDAO
+Server --> UI: 200 OK\n(JSON orders)
+deactivate Server
+UI --> User: Display Orders Table
+
+User -> UI: Create New Order
+UI -> Server: GET /getProducts
+Server --> UI: Products list
+UI -> Server: GET /getCustomers
+Server --> UI: Customers list
+UI --> User: Show Order Form\nwith Products & Customers
+
+User -> UI: Submit Order Form
+UI -> Server: POST /insertOrder\n{data: {customer_name, grand_total, order_details[]}}
+activate Server
+Server -> OrderDAO: insert_order(conn, payload)
+activate OrderDAO
+OrderDAO -> DB: INSERT INTO orders\n(customer_name, total, datetime)
+activate DB
+DB --> OrderDAO: order_id
+deactivate DB
+OrderDAO -> OrderDAO: For each order_detail
+OrderDAO -> DB: INSERT INTO order_details\n(order_id, products_id, quantity, price_per_unit, total_price)
+activate DB
+DB --> OrderDAO: Success
+deactivate DB
+OrderDAO --> Server: {order_id, ...}
+deactivate OrderDAO
+Server --> UI: 200 OK\n(order result)
+deactivate Server
+UI --> User: Order Created\nRedirect to Dashboard
+
+User -> UI: View Order Details
+UI -> Server: GET /getOrderDetails/<order_id>
+activate Server
+Server -> OrderDAO: get_order_by_id(conn, order_id)
+activate OrderDAO
+OrderDAO -> DB: SELECT * FROM orders\nJOIN order_details\nWHERE order_id = ?
+activate DB
+DB --> OrderDAO: Order with details
+deactivate DB
+OrderDAO --> Server: Order object
+deactivate OrderDAO
+Server --> UI: 200 OK\n(order details)
+deactivate Server
+UI --> User: Show Order Details Modal
+
+User -> UI: Edit Order
+UI -> Server: GET /getOrderDetails/<order_id>
+Server --> UI: Order data
+UI --> User: Show Order Form\nPre-filled with data
+User -> UI: Submit Updated Order
+UI -> Server: POST /updateOrder\n{data: {order_id, customer_name, grand_total, order_details[]}}
+activate Server
+Server -> OrderDAO: update_order(conn, payload)
+activate OrderDAO
+OrderDAO -> DB: UPDATE orders\nDELETE old order_details\nINSERT new order_details
+activate DB
+DB --> OrderDAO: Success
+deactivate DB
+OrderDAO --> Server: Order result
+deactivate OrderDAO
+Server --> UI: 200 OK
+deactivate Server
+UI --> User: Order Updated\nRedirect to Dashboard
+
+User -> UI: Delete Order
+UI -> Server: POST /deleteOrder\n{order_id}
+activate Server
+Server -> OrderDAO: delete_order(conn, order_id)
+activate OrderDAO
+OrderDAO -> DB: DELETE FROM order_details\nWHERE order_id = ?\nDELETE FROM orders\nWHERE order_id = ?
+activate DB
+DB --> OrderDAO: Success
+deactivate DB
+OrderDAO --> Server: Success
+deactivate OrderDAO
+Server --> UI: 200 OK\n{order_id}
+deactivate Server
+UI --> User: Order Deleted\nReload Page
+
+== Finance Management Flow ==
+User -> UI: View Finances Page
+UI -> Server: GET /getFinances
+activate Server
+Server -> FinanceDAO: get_all_finances(conn)
+activate FinanceDAO
+FinanceDAO -> DB: SELECT * FROM finances\nLEFT JOIN customers
+activate DB
+DB --> FinanceDAO: Finance records
+deactivate DB
+FinanceDAO --> Server: Finances array
+deactivate FinanceDAO
+Server --> UI: 200 OK\n(JSON finances)
+deactivate Server
+UI --> User: Display Finances Table
+
+User -> UI: Add/Edit Finance Record
+UI -> Server: GET /getCustomers
+Server --> UI: Customers list
+UI --> User: Show Finance Form\nwith Customer dropdown
+
+User -> UI: Submit Finance Form
+UI -> Server: POST /insertFinance\nor POST /updateFinance\n{data: {payment_id, total_price, payment_type, date, Customer_id}}
+activate Server
+alt New Finance
+    Server -> FinanceDAO: insert_new_finance(conn, payload)
+    activate FinanceDAO
+    FinanceDAO -> DB: INSERT INTO finances
+    activate DB
+    DB --> FinanceDAO: payment_id
+    deactivate DB
+else Update Finance
+    Server -> FinanceDAO: update_finance(conn, payload)
+    activate FinanceDAO
+    FinanceDAO -> DB: UPDATE finances\nSET ... WHERE payment_id = ?
+    activate DB
+    DB --> FinanceDAO: Success
+    deactivate DB
+end
+FinanceDAO --> Server: payment_id
+deactivate FinanceDAO
+Server --> UI: 200 OK\n{payment_id}
+deactivate Server
+UI --> User: Finance Record Saved\nReload Page
+
+User -> UI: Delete Finance Record
+UI -> Server: POST /deleteFinance\n{payment_id}
+activate Server
+Server -> FinanceDAO: delete_finance(conn, payment_id)
+activate FinanceDAO
+FinanceDAO -> DB: DELETE FROM finances\nWHERE payment_id = ?
+activate DB
+DB --> FinanceDAO: Success
+deactivate DB
+FinanceDAO --> Server: payment_id
+deactivate FinanceDAO
+Server --> UI: 200 OK\n{payment_id}
+deactivate Server
+UI --> User: Finance Record Deleted\nReload Page
+
+== Logout Flow ==
+User -> UI: Logout
+UI -> Server: POST /logout
+activate Server
+Server -> Server: session.pop('user', None)
+Server --> UI: 200 OK\n{message: "logged out"}
+deactivate Server
+UI --> User: Redirect to Login
+
+@enduml
